@@ -2,9 +2,8 @@
 <resources>
     <string name="app_name">Demo</string>
     <string name="info1">One object/barcode at a time</string>
-    <string name="info2">Place it upright</string>
+    <string name="info2">Place it upright</string><string name="info3">Tap to snap if nothing\'s found</string>
     <string name="home_scan">Scan</string>
     <string name="scan_name">ScanActivity</string>
-    <string name="initializing">Initialization...</string>
-    <string name="syncing">Synchronizing</string>
+    
 </resources>
