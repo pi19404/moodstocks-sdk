@@ -21,29 +21,36 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#import "MSSplashView.h"
+#import "MSActivityView.h"
 
-@implementation MSSplashView
+@interface MSActivityView ()
+- (void)cancel;
+@end
+
+@implementation MSActivityView
+
+@synthesize delegate = _delegate;
 
 - (id)initWithFrame:(CGRect)frame
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor whiteColor];
+        self.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.5];
         
         _label = [[UILabel alloc] init];
         _label.backgroundColor = [UIColor clearColor];
         _label.lineBreakMode = UILineBreakModeTailTruncation;
         _label.font = [UIFont boldSystemFontOfSize:16];
-        _label.textColor = [UIColor blackColor];
+        _label.textColor = [UIColor whiteColor];
         [self addSubview:_label];
         
-        _gear = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        _gear = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
         [self addSubview:_gear];
         
-        _bar = [[UIProgressView alloc] initWithProgressViewStyle:UIProgressViewStyleDefault];
-        _bar.hidden = YES;
-        [self addSubview:_bar];
+        _cancelButton = [[UIButton alloc] init];
+        [_cancelButton addTarget:self action:@selector(cancel) forControlEvents:UIControlEventTouchUpInside];
+        [_cancelButton setShowsTouchWhenHighlighted:YES];
+        [self addSubview:_cancelButton];
     }
     return self;
 }
@@ -51,7 +58,9 @@
 - (void)dealloc {
     [_label release];
     [_gear release];
-    [_bar release];
+    [_cancelButton release];
+    
+    _delegate = nil;
     
     [super dealloc];
 }
@@ -69,17 +78,16 @@
     CGFloat gh = _gear.frame.size.height;
     _gear.frame = CGRectMake(0.5 * (w - gw), 0.5 * (h - gh), gw, gh);
     
-    CGFloat bw = _bar.frame.size.width;
-    CGFloat bh = _bar.frame.size.height;
-    _bar.frame = CGRectMake(0.5 * (w - bw), 0.5 * (h - bh), bw, bh);
-    
     CGSize textSize = [_label.text sizeWithFont:_label.font];
     const CGFloat spacing = 10;
     CGFloat xl = 0.5 * (w - textSize.width);
-    CGFloat yl;
-    if (_bar.hidden == YES) yl = _gear.frame.origin.y + gh;
-    else yl = _bar.frame.origin.y + bh;
+    CGFloat yl = _gear.frame.origin.y + gh;
     _label.frame = CGRectMake(xl, yl + spacing, textSize.width, textSize.height);
+    
+    CGFloat margin = 5;
+    UIImage *cancelImage = [UIImage imageNamed:@"cancel.png"];
+    [_cancelButton setBackgroundImage:cancelImage forState:UIControlStateNormal];
+    _cancelButton.frame = CGRectMake(w - (cancelImage.size.width + margin), margin, cancelImage.size.width, cancelImage.size.height);
 }
 
 #pragma mark -
@@ -100,23 +108,20 @@
 
 - (void)setIsAnimating:(BOOL)isAnimating {
     if (isAnimating) {
-        [_bar setHidden:YES];
         [_gear startAnimating];
     }
     else {
-        [_bar setHidden:NO];
         [_gear stopAnimating];
     }
     [self setNeedsLayout];
 }
 
-- (float)progress {
-    return _bar.progress;
-}
+#pragma mark -
+#pragma mark Private
 
-- (void)setProgress:(float)progress {
-    _bar.progress = progress;
-    [self setNeedsLayout];
+- (void)cancel {
+    if ([_delegate respondsToSelector:@selector(activityViewDidCancel:)])
+         [_delegate performSelector:@selector(activityViewDidCancel:) withObject:self];
 }
 
 @end

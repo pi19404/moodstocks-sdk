@@ -25,8 +25,13 @@
 
 #import "MSScannerController.h"
 
-@interface MSOverlayController : UIViewController<MSScannerOverlayDelegate
-,UIActionSheetDelegate> {
+@interface MSOverlayController : UIViewController
+<MSScannerOverlayDelegate
+,UIActionSheetDelegate
+#if MS_SDK_REQUIREMENTS
+,MSScannerDelegate
+#endif
+> {
     MSScannerController *_scanner; // parent scanner
     UIActionSheet *_actionSheet; // current overlay element
 }
@@ -34,6 +39,5 @@
 @property (nonatomic, assign) BOOL decodeEAN_8;
 @property (nonatomic, assign) BOOL decodeEAN_13;
 @property (nonatomic, assign) BOOL decodeQRCode;
-@property (nonatomic, assign) NSInteger imagesCount;
 
 @end

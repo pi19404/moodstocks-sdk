@@ -25,10 +25,11 @@
 
 #import "MSScanner.h"
 
-#import "MSSplashView.h"
-
-@interface RootViewController : UIViewController <MSScannerDelegate> {
-    MSSplashView *_splashView;
+@interface RootViewController : UIViewController
+#if MS_SDK_REQUIREMENTS
+<MSScannerDelegate>
+#endif
+{
     NSTimeInterval _lastSync; // timestamp of last successful sync
 }
 

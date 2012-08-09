@@ -57,6 +57,10 @@ static void ms_avcapture_cleanup(void *p) {
 - (void)startCapture;
 - (void)stopCapture;
 
+- (void)showFlash;
+- (void)setActivityView:(BOOL)show;
+
+- (void)snapAction:(UIGestureRecognizer *)gestureRecognizer;
 - (void)dismissAction;
 
 @end
@@ -70,27 +74,29 @@ static void ms_avcapture_cleanup(void *p) {
 @synthesize orientation;
 #endif
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
-{
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
         UIBarButtonItem *barButton = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
                                                                                     target:self
                                                                                     action:@selector(dismissAction)] autorelease];
         self.navigationItem.leftBarButtonItem = barButton;
+        
+        _scannerSession = [[MSScannerSession alloc] initWithScanner:[MSScanner sharedInstance]];
 
 #if MS_SDK_REQUIREMENTS
+        // This is to register to the API search notifications triggered by the snap & send mode
+        _scannerSession.delegate = self;
+        
         [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(deviceOrientationDidChange)
                                                      name:UIDeviceOrientationDidChangeNotification
                                                    object:nil];
         self.orientation = AVCaptureVideoOrientationPortrait;
-        scannerSession = [[MSScannerSession alloc] initWithScanner:[MSScanner sharedInstance]];
 #endif
         
         _overlayController = [[MSOverlayController alloc] init];
-        _processFrames = NO;
     }
     return self;
 }
@@ -99,13 +105,14 @@ static void ms_avcapture_cleanup(void *p) {
     [_overlayController release];
     _overlayController = nil;
     
+    [_scannerSession release];
+    
     [_result release];
     _result = nil;
     
 #if MS_SDK_REQUIREMENTS
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
     [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
-    [scannerSession release];
 #endif
     
     [super dealloc];
@@ -212,14 +219,11 @@ static void ms_avcapture_cleanup(void *p) {
     [self.captureSession startRunning];
     
     // == OVERLAY NOTIFICATION
-    NSDictionary *state = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], @"ready",
-                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_EAN8)],      @"decode_ean_8",
-                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_EAN13)],     @"decode_ean_13",
-                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_QRCODE)],    @"decode_qrcode",
-                           [NSNumber numberWithInteger:[[MSScanner sharedInstance] count:nil]],     @"images", nil];
+    NSDictionary *state = [NSDictionary dictionaryWithObjectsAndKeys:
+                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_EAN8)],   @"decode_ean_8",
+                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_EAN13)],  @"decode_ean_13",
+                           [NSNumber numberWithBool:!!(kMSScanOptions & MS_RESULT_TYPE_QRCODE)], @"decode_qrcode", nil];
     [_overlayController scanner:self stateUpdated:state];
-    
-    _processFrames = YES;
 #endif
 }
 
@@ -240,41 +244,85 @@ static void ms_avcapture_cleanup(void *p) {
 #endif
 }
 
+- (void)showFlash {
+    CGRect frame = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height);
+    UIView *flashView = [[UIView alloc] initWithFrame:frame];
+    [flashView setBackgroundColor:[UIColor whiteColor]];
+    [self.view addSubview:flashView];
+    
+    void (^animate)(void) = ^{
+        [flashView setAlpha:0.f];
+    };
+    
+    void (^finish)(BOOL finished) = ^(BOOL finished){
+        [flashView removeFromSuperview];
+        [flashView release];
+    };
+    
+    [UIView animateWithDuration:.4f animations:animate completion:finish];
+}
+
+- (void)setActivityView:(BOOL)show {
+    MSActivityView *activityIndicator = nil;
+    if (show) {
+        CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
+        CGFloat offsetY = statusFrame.size.height + 44 /* toolbar height in portrait */;
+        CGRect frame = CGRectMake(0, offsetY, self.view.frame.size.width, self.view.frame.size.height);
+        activityIndicator = [[MSActivityView alloc] initWithFrame:frame];
+        activityIndicator.text = @"Searching...";
+        activityIndicator.isAnimating = YES;
+        activityIndicator.delegate = self;
+        // Place this view at the navigation controller level to make sure it ignores tap gestures
+        [self.navigationController.view addSubview:activityIndicator];
+        [activityIndicator release];
+    }
+    else {
+        for (UIView *v in [self.navigationController.view subviews]) {
+            if ([v isKindOfClass:[MSActivityView class]]) {
+                activityIndicator = (MSActivityView *) v;
+                break;
+            }
+        }
+        [activityIndicator removeFromSuperview];
+    }
+}
+
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
 
 #if MS_SDK_REQUIREMENTS
-- (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
-    if (!_processFrames)
-        return;
+- (void)captureOutput:(AVCaptureOutput *)captureOutput
+didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
+       fromConnection:(AVCaptureConnection *)connection {
+    if (_scannerSession.state != MS_SCAN_STATE_DEFAULT) return;
     
-    // -------------------------------------------------
-    // Camera frame conversion
-    // -------------------------------------------------
+    // Convert camera frame
+    // --
     MSImage *qry = [[MSImage alloc] initWithBuffer:sampleBuffer orientation:self.orientation];
     
-    // -------------------------------------------------
-    // Scanning
-    // -------------------------------------------------
+    // Scan
+    // --
     NSError *err = nil;
-    MSResult *result = [scannerSession scan:qry options:kMSScanOptions error:&err];
+    MSResult *result = [_scannerSession scan:qry options:kMSScanOptions error:&err];
     if (err != nil) {
         MSDLog(@" [MOODSTOCKS SDK] SCAN ERROR: %@", [NSString stringWithCString:ms_errmsg([err code])
                                                                        encoding:NSUTF8StringEncoding]);
     }
     
-    // -------------------------------------------------
-    // Overlay refreshing
-    // -------------------------------------------------
+    // Notify the overlay
+    // --
     if (result != nil) {
-        // Refresh the UI if a *new* result has been found
+        // We choose to notify only if a *new* result has been found
         if (![_result isEqualToResult:result]) {
             [_result release];
             _result = [result copy];
             
-            // This UI action must be dispatched into the main thread
+            // This is to prevent the scanner to keep scanning while a result
+            // is shown on the overlay side (see `resume` method below)
+            [_scannerSession pause];
+            
+            // Make sure this happens into the *main* thread
             CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopCommonModes, ^(void) {
-                NSDictionary *state = [NSDictionary dictionaryWithObject:result forKey:@"result"];
-                [_overlayController scanner:self stateUpdated:state];
+                [_overlayController scanner:self resultFound:result];
             });
         }
     }
@@ -300,6 +348,12 @@ static void ms_avcapture_cleanup(void *p) {
     [_overlayController.view setTag:2];
     [_overlayController.view setFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
     [self.view addSubview:_overlayController.view];
+    
+    UITapGestureRecognizer *tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                                                    action:@selector(snapAction:)];
+    tapRecognizer.numberOfTapsRequired = 1;
+    [self.view addGestureRecognizer:tapRecognizer];
+    [tapRecognizer release];
 }
 
 - (void)viewDidLoad {
@@ -311,25 +365,101 @@ static void ms_avcapture_cleanup(void *p) {
     [self startCapture];
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
     // Return YES for supported orientations
 	return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
 #pragma mark - Actions
 
+- (void)snapAction:(UIGestureRecognizer *)gestureRecognizer {
+    [self showFlash];
+    [_scannerSession snap];
+}
+
 - (void)dismissAction {
     [self stopCapture];
-    
+    // This is to make sure any pending API search is cancelled
+    [_scannerSession cancel];
     [self dismissModalViewControllerAnimated:YES];
+}
+
+#pragma mark - MSScannerDelegate
+
+#if MS_SDK_REQUIREMENTS
+- (void)scannerWillSearch:(MSScanner *)scanner {
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
+    [self setActivityView:YES];
+}
+
+- (void)scanner:(MSScanner *)scanner didSearchWithResult:(MSResult *)result {
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+    [self setActivityView:NO];
+    
+    if (result != nil) {
+        [_scannerSession pause];
+        [_overlayController scanner:self resultFound:result];
+    }
+    else {
+        // Feel free to choose the proper UI component used to warn the user
+        // that the API search could not found a match
+        [[[[UIAlertView alloc] initWithTitle:@"No match found"
+                                     message:nil
+                                    delegate:nil
+                           cancelButtonTitle:@"OK"
+                           otherButtonTitles:nil] autorelease] show];
+    }
+}
+
+- (void)scanner:(MSScanner *)scanner failedToSearchWithError:(NSError *)error {
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+    [self setActivityView:NO];
+    
+    ms_errcode ecode = [error code];
+    // NOTE: ignore negative error codes (e.g. -1 when the request has been cancelled)
+    if (ecode >= 0) {
+        NSString *errStr = [NSString stringWithCString:ms_errmsg(ecode) encoding:NSUTF8StringEncoding];
+        
+        MSDLog(@" [MOODSTOCKS SDK] FAILED TO SEARCH WITH ERROR: %@", errStr);
+        
+        // Here you may want to inform the user that an error occurred
+        // Fee free to adapt to your needs (wording, display policy, etc)
+        switch (ecode) {
+            case MS_NOCONN:
+                errStr = @"No Internet connection.";
+                break;
+                
+            case MS_TIMEOUT:
+                errStr = @"The request timed out.";
+                break;
+                
+            default:
+                errStr = [NSString stringWithFormat:@"An error occurred (code = %d).", ecode];
+                break;
+        }
+        
+        // Feel free to choose the proper UI component to warn the user that an error occurred
+        [[[[UIAlertView alloc] initWithTitle:@"Search error"
+                                     message:errStr
+                                    delegate:nil
+                           cancelButtonTitle:@"OK"
+                           otherButtonTitles:nil] autorelease] show];
+    }
+}
+#endif
+
+#pragma mark - MSActivityViewDelegate
+
+- (void)activityViewDidCancel:(MSActivityView *)view {
+    [_scannerSession cancel];
 }
 
 #pragma mark - Public
 
-- (void)reset {
+- (void)resume {
     [_result release];
     _result = nil;
+    [_scannerSession resume];
 }
 
 @end

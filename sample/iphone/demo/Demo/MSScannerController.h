@@ -31,25 +31,27 @@
 
 #import "MSScanner.h"
 #import "MSScannerSession.h"
+#import "MSActivityView.h"
 
 @protocol MSScannerOverlayDelegate;
 @class MSOverlayController;
 
 @interface MSScannerController : UIViewController
+<
+MSActivityViewDelegate
 #if MS_SDK_REQUIREMENTS
-<AVCaptureVideoDataOutputSampleBufferDelegate
->
+, AVCaptureVideoDataOutputSampleBufferDelegate, MSScannerDelegate
 #endif
+>
 {
     MSOverlayController *_overlayController;
+    MSScannerSession    *_scannerSession;
 #if MS_SDK_REQUIREMENTS
     AVCaptureSession*           captureSession;
     AVCaptureVideoPreviewLayer *previewLayer;
     AVCaptureVideoOrientation   orientation;
-    MSScannerSession           *scannerSession;
 #endif
-    BOOL _processFrames;      // frames processing enabled / disabled
-    MSResult *_result;        // previous result
+    MSResult *_result; // previous result
 }
 
 #if MS_SDK_REQUIREMENTS
@@ -58,12 +60,23 @@
 @property (nonatomic, assign) AVCaptureVideoOrientation orientation;
 #endif
 
-// Flush the last recognized result (if any)
-- (void)reset;
+/**
+ * Flush the last recognized result (if any) and start scanning again
+ */
+- (void)resume;
 
 @end
 
 @protocol MSScannerOverlayDelegate <NSObject>
+/**
+ * Used to communicate a scanning result to the overlay
+ */
+- (void)scanner:(MSScannerController *)scanner resultFound:(MSResult *)result;
+
+@optional
+
+/**
+ * Used to communicate any information (e.g. options, etc) that may be shown on the overlay side
+ */
 - (void)scanner:(MSScannerController *)scanner stateUpdated:(NSDictionary *)state;
 @end
-

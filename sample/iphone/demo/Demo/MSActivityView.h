@@ -23,14 +23,22 @@
 
 #import <UIKit/UIKit.h>
 
-@interface MSSplashView : UIView {
+@protocol MSActivityViewDelegate;
+
+@interface MSActivityView : UIView {
     UILabel *_label;
     UIActivityIndicatorView *_gear;
-    UIProgressView *_bar;
+    UIButton *_cancelButton;
+    id<MSActivityViewDelegate> _delegate;
 }
+
+@property (nonatomic, assign) id<MSActivityViewDelegate> delegate;
 
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic) BOOL isAnimating;
-@property (nonatomic) float progress;
 
+@end
+
+@protocol MSActivityViewDelegate <NSObject>
+- (void)activityViewDidCancel:(MSActivityView *)view;
 @end

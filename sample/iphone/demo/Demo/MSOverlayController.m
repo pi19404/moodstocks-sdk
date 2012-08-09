@@ -23,18 +23,21 @@
 
 #import "MSOverlayController.h"
 
+#import "MSDebug.h"
+#import "MSScanner.h"
+
 /* UI settings */
 static const NSInteger kMSScanInfoMargin = 5;
 static const NSInteger kMSInfoFontSize   = 14;
 
 @interface MSOverlayController ()
 
-// Method to control the visibility of scanning controls
-- (void)showScannerInfo:(BOOL)show;
 - (UILabel *)getLabelWithTag:(NSInteger)tag;
+- (void)updateCacheCount:(NSInteger)count;
+- (void)updateCacheProgress:(float)percent;
+- (void)updateCache:(NSString *)info;
 - (void)updateEAN;
 - (void)updateQRCode;
-- (void)updateImages:(NSInteger)count;
 
 @end
 
@@ -43,31 +46,27 @@ static const NSInteger kMSInfoFontSize   = 14;
 @synthesize decodeEAN_8;
 @synthesize decodeEAN_13;
 @synthesize decodeQRCode;
-@synthesize imagesCount;
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
-{
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
         _scanner = nil;
+        
+        // Register as a sync delegate to update the UI when a sync is pending
+        // NOTE: you are not supposed to register as follow if you do not plan
+        // to include UI elements related to the synchronization on your app
+        [[[MSScanner sharedInstance] syncDelegates] addObject:self];
     }
     return self;
 }
 
-- (void)dealloc
-{
+- (void)dealloc {
     [_actionSheet release];
     _actionSheet = nil;
     
-    [super dealloc];
-}
-
-- (void)didReceiveMemoryWarning
-{
-    // Releases the view if it doesn't have a superview.
-    [super didReceiveMemoryWarning];
+    [[[MSScanner sharedInstance] syncDelegates] removeObject:self];
     
-    // Release any cached data, images, etc that aren't in use.
+    [super dealloc];
 }
 
 #pragma mark - View lifecycle
@@ -86,9 +85,9 @@ static const NSInteger kMSInfoFontSize   = 14;
     
     // Scanner settings
     NSMutableArray *scanInfo = [NSMutableArray array];
+    [scanInfo addObject:@" [  ] cache "];
     [scanInfo addObject:@" [  ] EAN "];
     [scanInfo addObject:@" [  ] QR Code "];
-    [scanInfo addObject:@" [✓] 0 image "];
     
     CGFloat offsetY = 0;
     for (NSString *text in scanInfo) {
@@ -108,7 +107,6 @@ static const NSInteger kMSInfoFontSize   = 14;
         infoLabel.shadowColor     = [UIColor blackColor];
         infoLabel.text            = text;
         infoLabel.font            = font;
-        infoLabel.alpha           = 0.0;
         infoLabel.frame           = CGRectMake(kMSScanInfoMargin, offsetY, textSize.width, textSize.height);
         
         offsetY += textSize.height;
@@ -123,8 +121,9 @@ static const NSInteger kMSInfoFontSize   = 14;
     NSMutableArray *userInfo = [NSMutableArray array];
     [userInfo addObject:@" One object/barcode at a time. "];
     [userInfo addObject:@" Place it upright. "];
+    [userInfo addObject:@" Tap to snap if nothing's found. "];
     
-    for (int i = 1; i >=0; i--) {
+    for (int i = 2; i >=0; i--) {
         NSString *text = [userInfo objectAtIndex:i];
         
         offsetY -= kMSScanInfoMargin;
@@ -143,7 +142,6 @@ static const NSInteger kMSInfoFontSize   = 14;
         userInfoLabel.shadowColor     = [UIColor blackColor];
         userInfoLabel.text            = text;
         userInfoLabel.font            = font;
-        userInfoLabel.alpha           = 0.0;
         userInfoLabel.frame           = CGRectMake(0.5 * (self.view.frame.size.width - textSize.width),
                                                    offsetY - textSize.height,
                                                    textSize.width,
@@ -156,25 +154,24 @@ static const NSInteger kMSInfoFontSize   = 14;
     }
 }
 
-- (void)viewDidUnload
-{
+- (void)viewDidLoad {
+#if MS_SDK_REQUIREMENTS
+    MSScanner *scanner = [MSScanner sharedInstance];
+    if (![scanner isSyncing]) [self updateCacheCount:[scanner count:nil]];
+    else [self updateCache:@"syncing..."];
+#endif
+}
+
+- (void)viewDidUnload {
     [super viewDidUnload];
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
     // Return YES for supported orientations
     return (interfaceOrientation == UIInterfaceOrientationPortrait);
 }
 
 #pragma mark - Private stuff
-
-- (void)showScannerInfo:(BOOL)show {
-    for (UIView *v in [self.view subviews]) {
-        if ([v isKindOfClass:[UILabel class]])
-            [v setAlpha:(show ? 1.0 : 0.0)];
-    }
-}
 
 - (UILabel *)getLabelWithTag:(NSInteger)tag {
     UILabel* label = nil;
@@ -191,8 +188,33 @@ static const NSInteger kMSInfoFontSize   = 14;
     return label;
 }
 
+- (void)updateCacheCount:(NSInteger)count {
+    [self updateCache:[NSString stringWithFormat:@"%d %@", count, (count > 1 ? @"images" : @"image")]];
+}
+
+- (void)updateCacheProgress:(float)percent {
+    [self updateCache:[NSString stringWithFormat:@"syncing... %.0f%%", percent]];
+}
+
+- (void)updateCache:(NSString *)info {
+    UILabel *label = [self getLabelWithTag:0];
+    
+    if (label != nil) {
+        NSString *text = [NSString stringWithFormat:@" [✓] cache (%@) ", info];
+        UIFont *font = [UIFont systemFontOfSize:kMSInfoFontSize];
+        UILineBreakMode breakMode = UILineBreakModeWordWrap;
+        CGSize textSize = [text sizeWithFont:font
+                           constrainedToSize:CGSizeMake(self.view.frame.size.width - kMSScanInfoMargin, CGFLOAT_MAX)
+                               lineBreakMode:breakMode];
+        CGRect frame = label.frame;
+        
+        label.text = text;
+        label.frame = CGRectMake(frame.origin.x, frame.origin.y, textSize.width, textSize.height);
+    }
+}
+
 - (void)updateEAN {
-    UILabel * label = [self getLabelWithTag:0];
+    UILabel * label = [self getLabelWithTag:1];
     
     if (label != nil) {
         BOOL ean = !!(self.decodeEAN_8 || self.decodeEAN_13);
@@ -219,7 +241,7 @@ static const NSInteger kMSInfoFontSize   = 14;
 }
 
 - (void)updateQRCode {
-    UILabel * label = [self getLabelWithTag:1];
+    UILabel * label = [self getLabelWithTag:2];
     
     if (label != nil) {
         NSString *text = [NSString stringWithFormat:@" [%@] QR Code ", (self.decodeQRCode ? @"✓" : @"  ")];
@@ -236,37 +258,58 @@ static const NSInteger kMSInfoFontSize   = 14;
     }
 }
 
-- (void)updateImages:(NSInteger)count {
-    UILabel * label = [self getLabelWithTag:2];
-    
-    if (label != nil) {
-        NSString *text = [NSString stringWithFormat:@" [✓] %d %@",
-                          count,
-                          (count > 1 ? @"images" : @"image")];
-        
-        UIFont *font = [UIFont systemFontOfSize:kMSInfoFontSize];
-        UILineBreakMode breakMode = UILineBreakModeWordWrap;
-        CGSize textSize = [text sizeWithFont:font
-                           constrainedToSize:CGSizeMake(self.view.frame.size.width - kMSScanInfoMargin, CGFLOAT_MAX)
-                               lineBreakMode:breakMode];
-        CGRect frame = label.frame;
-        
-        label.text = text;
-        label.frame = CGRectMake(frame.origin.x, frame.origin.y, textSize.width, textSize.height);
-    }
-}
-
 #pragma mark - MSScannerOverlayDelegate
 
-- (void)scanner:(MSScannerController *)scanner stateUpdated:(NSDictionary *)state {
+- (void)scanner:(MSScannerController *)scanner resultFound:(MSResult *)result {
     _scanner = scanner;
     
-    // Toggle whole scanner info (target + text)
-    if ([(NSNumber *) [state objectForKey:@"ready"] boolValue]) {
-        [self showScannerInfo:YES];
+    int type = [result getType];
+    NSString *value = [result getValue];
+    NSString *resultStr;
+    switch (type) {
+        case MS_RESULT_TYPE_IMAGE:
+            resultStr = value;
+            break;
+            
+        case MS_RESULT_TYPE_EAN8:
+            resultStr = [NSString stringWithFormat:@"EAN 8: %@", value];
+            break;
+            
+        case MS_RESULT_TYPE_EAN13:
+            resultStr = [NSString stringWithFormat:@"EAN 13: %@", value];
+            break;
+            
+        case MS_RESULT_TYPE_QRCODE:
+            resultStr = [NSString stringWithFormat:@"QR Code: %@", value];
+            break;
+            
+        default:
+            resultStr = @"<UNDEFINED>";
+            break;
     }
     
-    // Update EAN settings
+    // Retrieve and dismiss former result (if any)
+    if (_actionSheet != nil) {
+        [_actionSheet dismissWithClickedButtonIndex:-1 animated:NO];
+        [_actionSheet release];
+        _actionSheet = nil;
+    }
+    
+    // Present the most up-to-date result in overlay
+    //
+    // NOTE: this is a very basic way to display some information / action in overlay
+    //       You can think of it as an "hello world". In a real application you may want
+    //       to introduce your own UI elements and animations according to your needs
+    _actionSheet = [[UIActionSheet alloc] initWithTitle:resultStr
+                                               delegate:self
+                                      cancelButtonTitle:@"OK"
+                                 destructiveButtonTitle:nil
+                                      otherButtonTitles:nil];
+    _actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
+    [_actionSheet showInView:self.view];
+}
+
+- (void)scanner:(MSScannerController *)scanner stateUpdated:(NSDictionary *)state {
     NSNumber *ean8 = (NSNumber *) [state objectForKey:@"decode_ean_8"];
     if (ean8 != nil)
         self.decodeEAN_8 = [ean8 boolValue];
@@ -276,82 +319,43 @@ static const NSInteger kMSInfoFontSize   = 14;
     
     if (ean8 != nil || ean13 != nil) [self updateEAN];
     
-    // Update QR Code settings
     NSNumber *qrCode = (NSNumber *) [state objectForKey:@"decode_qrcode"];
     if (qrCode != nil) {
         self.decodeQRCode = [qrCode boolValue];
         [self updateQRCode];
     }
-    
-    // Update image settings
-    NSNumber *images = (NSNumber *) [state objectForKey:@"images"];
-    if (images != nil)
-        self.imagesCount = [images integerValue];
-    if (images != nil) {
-        [self updateImages:self.imagesCount];
-    }
-    
-    // Update result
-    MSResult *result = (MSResult *) [state objectForKey:@"result"];
-    if (result != nil) {
-        int type = [result getType];
-        if (type != MS_RESULT_TYPE_NONE) {
-            NSString *value = [result getValue];
-            NSString *resultStr;
-            switch (type) {
-                case MS_RESULT_TYPE_IMAGE:
-                    resultStr = value;
-                    break;
-                    
-                case MS_RESULT_TYPE_EAN8:
-                    resultStr = [NSString stringWithFormat:@"EAN 8: %@", value];
-                    break;
-                    
-                case MS_RESULT_TYPE_EAN13:
-                    resultStr = [NSString stringWithFormat:@"EAN 13: %@", value];
-                    break;
-                    
-                case MS_RESULT_TYPE_QRCODE:
-                    resultStr = [NSString stringWithFormat:@"QR Code: %@", value];
-                    break;
-                    
-                default:
-                    resultStr = @"<UNDEFINED>";
-                    break;
-            }
-            
-            // Retrieve and dismiss former result (if any)
-            if (_actionSheet != nil) {
-                [_actionSheet dismissWithClickedButtonIndex:-1 animated:NO];
-                
-                [_actionSheet release];
-                _actionSheet = nil;
-            }
-            
-            // Present the most up-to-date result in overlay
-            //
-            // NOTE: this is a very basic way to display some information / action in overlay
-            //       You can think of it as an "hello world". In a real application you may want
-            //       to introduce your own UI elements and animations according to your needs
-            _actionSheet = [[UIActionSheet alloc] initWithTitle:resultStr
-                                                       delegate:self
-                                              cancelButtonTitle:@"OK"
-                                         destructiveButtonTitle:nil
-                                              otherButtonTitles:nil];
-            _actionSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
-            [_actionSheet showInView:self.view];
-        }
-    }
-    
 }
 
 #pragma mark - UIActionSheetDelegate
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
     if (buttonIndex == 0) {
-        // Tell the scanner there is no need to memorize the former result
-        [_scanner reset];
+        // Tell the scanner to start scanning again
+        [_scanner resume];
     }
 }
+
+#pragma mark - MSScannerDelegate
+
+// The purpose of the methods below is to update the synchronization information on the UI side
+
+#if MS_SDK_REQUIREMENTS
+- (void)scannerWillSync:(MSScanner *)scanner {
+    [self updateCache:@"syncing..."];
+}
+
+- (void)didSyncWithProgress:(NSNumber *)current total:(NSNumber *)total {
+    float percent = 100 * [current floatValue] / [total floatValue];
+    [self updateCacheProgress:percent];
+}
+
+- (void)scannerDidSync:(MSScanner *)scanner {
+    [self updateCacheCount:[scanner count:nil]];
+}
+
+- (void)scanner:(MSScanner *)scanner failedToSyncWithError:(NSError *)error {
+    [self updateCacheCount:[scanner count:nil]];
+}
+#endif
 
 @end
