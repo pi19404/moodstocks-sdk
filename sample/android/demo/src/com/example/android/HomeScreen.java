@@ -7,9 +7,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.View;
 
 public class HomeScreen extends Activity implements View.OnClickListener, Scanner.SyncListener {
@@ -17,46 +16,13 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 	public static final String TAG = "HomeScreen";
 	private boolean compatible = false;
 	private Scanner scanner = null;
-	
-	/* SYNC POLICY: this illustrates our recommended best practices concerning
-	 * the synchronization process. There are 3 cases to distinguish:
-	 * 
-	 * 1 - Cold Start: The app has just been launched for the first time 
-	 * 		 and the database is currently empty, which implies that the
-	 * 		 scanner has never been synced before and will not be able to
-	 * 		 work until a first sync completes:
-	 * 
-	 * 		 a - We show a splash screen including a progress bar that will
-	 *				 let the user know that a synchronization is running and 
-	 *				 keep him/her posted on the sync progression.
-	 *		 b - In case this sync fails (for example because there is no
-	 *				 available network), we inform the user that an error occurred
-	 *				 and force quit the app as the scanner will not be able to work
-	 *				 correctly.
-	 *
-	 *		 This case is the only one in which we show a progress bar or error
-	 *		 popups, to prevent the user from trying to use the scanner as the
-	 *		 offline recognition will not be able to work.
-	 *
-	 * 2 - The app has been killed and is re-launched, which in most cases 
-	 * 		 implies that the user has not used the app for quite a long time:
-	 * 		 we perform a seamless sync.
-	 * 
-	 * 3 - The app was still running in the background and comes back to the
-	 * 		 the foreground, which in most cases implies that the user has run
-	 * 		 the app recently: to avoid useless synchronizations, we perform a 
-	 * 		 seamless sync only if the previous one occurred more than one day 
-	 * 		 ago.
-	 */
-	
+
 	/* sync related variables */
-	private Splash splash = null;
 	private long last_sync = 0;
-	private boolean cold_start = true;
-	private static final long DAY = 86400000; /* duration of a day in ms */
+	private static final long DAY = DateUtils.DAY_IN_MILLIS;
 
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		/* First of all, check that the device is compatible, aka runs Android 2.3 or over.
 		 * If it's not the case, you **must** not try using the scanner as it will crash.
@@ -68,7 +34,6 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 		if (compatible) {
 			setContentView(R.layout.home);
 			findViewById(R.id.scan_button).setOnClickListener(this);
-			splash = (Splash) findViewById(R.id.splash);
 			try {
 				this.scanner = Scanner.get();
 				/* Open the scanner, necessary to perform any operation using it.
@@ -77,9 +42,6 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 				 * and crash the app.
 				 */
 				scanner.open(this, "ms.db");
-				/* Cold start detection */
-				if (scanner.count() != 0)
-					cold_start = false;
 			} catch (MoodstocksError e) {
 				/* an error occurred while opening the scanner */
 				if (e.getErrorCode() == MoodstocksError.Code.CREDMISMATCH) {
@@ -125,14 +87,20 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 	}
 	
 	@Override
-	public void onResume() {
+	protected void onResume() {
+		/* perform a sync if:
+		 * - the app is started either for the first time, 
+		 *   or has been killed and is started back.
+		 * - the app is resumed from the background AND 
+		 *   has not been synced for more than one day.
+		 */
 		super.onResume();
 		if (System.currentTimeMillis() - last_sync > DAY)
 			scanner.sync(this);
 	}
 
 	@Override
-	public void onDestroy() {
+	protected void onDestroy() {
 		super.onDestroy();
 		if (compatible) {
 			try {
@@ -155,74 +123,34 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 	//----------------------
 	// Scanner.SyncListener
 	//----------------------
+	
+	/* The synchronization is performed seamlessly. Until it has ended,
+	 * the user can still use the online search as a fallback.
+	 */
 
 	@Override
 	public void onSyncStart() {
-		if (cold_start)
-			splash.show(true);
+		// Developer logs, do not use in production
+		Log.d(TAG, "[SYNC] Starting...");
 	}
 
 	@Override
 	public void onSyncComplete() {
 		last_sync = System.currentTimeMillis();
-		if (cold_start) {
-			splash.show(false);
-			cold_start = false;
-		}
+		// Developer logs, do not use in production
+		Log.d(TAG, "[SYNC] Complete!");
 	}
 
 	@Override
 	public void onSyncFailed(MoodstocksError e) {
+		// fail silently, the user has online search fallback.
 		e.log();
-		if (cold_start) {
-			int ecode = e.getErrorCode();
-			String s;
-			switch(ecode) {
-				case MoodstocksError.Code.NOCONN: s = "The Internet connection does not work.";
-																					break;
-				case MoodstocksError.Code.SLOWCONN: s = "The Internet connection is too slow.";
-																						break;
-				case MoodstocksError.Code.TIMEOUT: s = "The operation timed out.";
-																					 break;
-				default: s = "An internal error occurred (code = "+e+").";
-								 break;
-			}
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setCancelable(false);
-			builder.setTitle("Oops!");
-			builder.setMessage(s+" Please try again later.");
-			builder.setNeutralButton("Quit", new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface dialog, int id) {
-					finish();
-				}
-			});
-			builder.show();
-		}
 	}
 
 	@Override
 	public void onSyncProgress(int total, int current) {
-		if (cold_start)
-			splash.update(total, current);
-	}
-	
-	//------
-	// MENU
-	//------
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.menu, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		if (item.getItemId() == R.id.sync && !scanner.isSyncing()) {
-			scanner.sync(this);
-		}
-		return true;
+		// Developer logs, do not use in production
+		Log.d(TAG, "[SYNC] "+current+"/"+total);
 	}
 
 }
