@@ -16,6 +16,7 @@
 		823E732515D3F55B0031AFC1 /* cancel.png in Resources */ = {isa = PBXBuildFile; fileRef = 823E732315D3F55B0031AFC1 /* cancel.png */; };
 		823E732615D3F55B0031AFC1 /* cancel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 823E732415D3F55B0031AFC1 /* cancel@2x.png */; };
 		823E732A15D3F56F0031AFC1 /* MSActivityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 823E732915D3F56F0031AFC1 /* MSActivityView.m */; };
+		826A832C160B781B00960B94 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 826A832B160B781B00960B94 /* Default-568h@2x.png */; };
 		82A1659C149907C200B8AEB4 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82A1659B149907C200B8AEB4 /* UIKit.framework */; };
 		82A1659E149907C200B8AEB4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82A1659D149907C200B8AEB4 /* Foundation.framework */; };
 		82A165A0149907C200B8AEB4 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82A1659F149907C200B8AEB4 /* CoreGraphics.framework */; };
@@ -41,6 +42,7 @@
 		823E732415D3F55B0031AFC1 /* cancel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cancel@2x.png"; sourceTree = "<group>"; };
 		823E732815D3F56F0031AFC1 /* MSActivityView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSActivityView.h; sourceTree = "<group>"; };
 		823E732915D3F56F0031AFC1 /* MSActivityView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MSActivityView.m; sourceTree = "<group>"; };
+		826A832B160B781B00960B94 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "../Default-568h@2x.png"; sourceTree = "<group>"; };
 		82A16597149907C200B8AEB4 /* Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		82A1659B149907C200B8AEB4 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		82A1659D149907C200B8AEB4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -154,6 +156,7 @@
 			children = (
 				823E732315D3F55B0031AFC1 /* cancel.png */,
 				823E732415D3F55B0031AFC1 /* cancel@2x.png */,
+				826A832B160B781B00960B94 /* Default-568h@2x.png */,
 				82DEE69814991D97002BA5B0 /* Default.png */,
 				82A165A3149907C200B8AEB4 /* Demo-Info.plist */,
 				82A165A4149907C200B8AEB4 /* InfoPlist.strings */,
@@ -218,6 +221,7 @@
 				82DEE69914991D97002BA5B0 /* Default.png in Resources */,
 				823E732515D3F55B0031AFC1 /* cancel.png in Resources */,
 				823E732615D3F55B0031AFC1 /* cancel@2x.png in Resources */,
+				826A832C160B781B00960B94 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -255,7 +259,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = armv7;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -279,7 +283,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = armv7;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
