@@ -16,6 +16,8 @@
 		823E732515D3F55B0031AFC1 /* cancel.png in Resources */ = {isa = PBXBuildFile; fileRef = 823E732315D3F55B0031AFC1 /* cancel.png */; };
 		823E732615D3F55B0031AFC1 /* cancel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 823E732415D3F55B0031AFC1 /* cancel@2x.png */; };
 		823E732A15D3F56F0031AFC1 /* MSActivityView.m in Sources */ = {isa = PBXBuildFile; fileRef = 823E732915D3F56F0031AFC1 /* MSActivityView.m */; };
+		824CCA32165BE17D00CE44B4 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 824CCA31165BE17D00CE44B4 /* icon.png */; };
+		824CCA34165BE17F00CE44B4 /* icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 824CCA33165BE17F00CE44B4 /* icon@2x.png */; };
 		826A832C160B781B00960B94 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 826A832B160B781B00960B94 /* Default-568h@2x.png */; };
 		82A1659C149907C200B8AEB4 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82A1659B149907C200B8AEB4 /* UIKit.framework */; };
 		82A1659E149907C200B8AEB4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 82A1659D149907C200B8AEB4 /* Foundation.framework */; };
@@ -42,6 +44,8 @@
 		823E732415D3F55B0031AFC1 /* cancel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cancel@2x.png"; sourceTree = "<group>"; };
 		823E732815D3F56F0031AFC1 /* MSActivityView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSActivityView.h; sourceTree = "<group>"; };
 		823E732915D3F56F0031AFC1 /* MSActivityView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MSActivityView.m; sourceTree = "<group>"; };
+		824CCA31165BE17D00CE44B4 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
+		824CCA33165BE17F00CE44B4 /* icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon@2x.png"; sourceTree = "<group>"; };
 		826A832B160B781B00960B94 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "../Default-568h@2x.png"; sourceTree = "<group>"; };
 		82A16597149907C200B8AEB4 /* Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		82A1659B149907C200B8AEB4 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -106,6 +110,8 @@
 		82A1658C149907C100B8AEB4 = {
 			isa = PBXGroup;
 			children = (
+				824CCA33165BE17F00CE44B4 /* icon@2x.png */,
+				824CCA31165BE17D00CE44B4 /* icon.png */,
 				82A165A1149907C200B8AEB4 /* Demo */,
 				82A1659A149907C200B8AEB4 /* Frameworks */,
 				82A16598149907C200B8AEB4 /* Products */,
@@ -222,6 +228,8 @@
 				823E732515D3F55B0031AFC1 /* cancel.png in Resources */,
 				823E732615D3F55B0031AFC1 /* cancel@2x.png in Resources */,
 				826A832C160B781B00960B94 /* Default-568h@2x.png in Resources */,
+				824CCA32165BE17D00CE44B4 /* icon.png in Resources */,
+				824CCA34165BE17F00CE44B4 /* icon@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,7 +282,7 @@
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -291,7 +299,7 @@
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
@@ -304,7 +312,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Demo/Demo-Prefix.pch";
 				INFOPLIST_FILE = "Demo/Demo-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/Demo\"",
@@ -320,7 +328,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Demo/Demo-Prefix.pch";
 				INFOPLIST_FILE = "Demo/Demo-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 4.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/Demo\"",

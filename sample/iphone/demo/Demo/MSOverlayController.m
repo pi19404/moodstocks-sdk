@@ -46,6 +46,7 @@ static const NSInteger kMSInfoFontSize   = 14;
 @synthesize decodeEAN_8;
 @synthesize decodeEAN_13;
 @synthesize decodeQRCode;
+@synthesize decodeDatamatrix;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
@@ -88,6 +89,7 @@ static const NSInteger kMSInfoFontSize   = 14;
     [scanInfo addObject:@" [  ] cache "];
     [scanInfo addObject:@" [  ] EAN "];
     [scanInfo addObject:@" [  ] QR Code "];
+    [scanInfo addObject:@" [  ] Datamatrix"];
     
     CGFloat offsetY = 0;
     for (NSString *text in scanInfo) {
@@ -258,6 +260,24 @@ static const NSInteger kMSInfoFontSize   = 14;
     }
 }
 
+- (void)updateDatamatrix {
+    UILabel * label = [self getLabelWithTag:3];
+    
+    if (label != nil) {
+        NSString *text = [NSString stringWithFormat:@" [%@] Datamatrix ", (self.decodeDatamatrix ? @"✓" : @"  ")];
+        
+        UIFont *font = [UIFont systemFontOfSize:kMSInfoFontSize];
+        UILineBreakMode breakMode = UILineBreakModeWordWrap;
+        CGSize textSize = [text sizeWithFont:font
+                           constrainedToSize:CGSizeMake(self.view.frame.size.width - kMSScanInfoMargin, CGFLOAT_MAX)
+                               lineBreakMode:breakMode];
+        CGRect frame = label.frame;
+        
+        label.text = text;
+        label.frame = CGRectMake(frame.origin.x, frame.origin.y, textSize.width, textSize.height);
+    }
+}
+
 #pragma mark - MSScannerOverlayDelegate
 
 - (void)scanner:(MSScannerController *)scanner resultFound:(MSResult *)result {
@@ -283,6 +303,10 @@ static const NSInteger kMSInfoFontSize   = 14;
             resultStr = [NSString stringWithFormat:@"QR Code: %@", value];
             break;
             
+        case MS_RESULT_TYPE_DMTX:
+            resultStr = [NSString stringWithFormat:@"Datamatrix: %@", value];
+            break;
+
         default:
             resultStr = @"<UNDEFINED>";
             break;
@@ -323,6 +347,12 @@ static const NSInteger kMSInfoFontSize   = 14;
     if (qrCode != nil) {
         self.decodeQRCode = [qrCode boolValue];
         [self updateQRCode];
+    }
+    
+    NSNumber *dmtx = (NSNumber *) [state objectForKey:@"decode_datamatrix"];
+    if (dmtx != nil) {
+        self.decodeDatamatrix = [dmtx boolValue];
+        [self updateDatamatrix];
     }
 }
 
