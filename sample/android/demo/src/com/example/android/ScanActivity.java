@@ -1,7 +1,5 @@
 package com.example.android;
 
-import com.moodstocks.android.*;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -11,6 +9,10 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.SlidingDrawer;
 import android.widget.Toast;
+
+import com.moodstocks.android.MoodstocksError;
+import com.moodstocks.android.Result;
+import com.moodstocks.android.ScannerSession;
 
 public class ScanActivity extends Activity implements ScannerSession.Listener, View.OnClickListener, ProgressDialog.OnCancelListener {
 
@@ -25,9 +27,9 @@ public class ScanActivity extends Activity implements ScannerSession.Listener, V
 	}
 
 	// Enabled scanning types: configure it according to your needs.
-	// Here we allow Image recognition, EAN13 and QRCodes decoding.
-	// Feel free to add `EAN8` if you want in addition to decode EAN-8.
-	private int ScanOptions = Result.Type.IMAGE | Result.Type.EAN13 | Result.Type.QRCODE;
+	// Here we allow only Image recognition. Feel free to add EAN8,
+	// EAN13, QR Codes and Data Matrices according to your needs.
+	private int ScanOptions = Result.Type.IMAGE;
 
 	public static final String TAG = "Main";
 	private ScannerSession session;
@@ -40,11 +42,7 @@ public class ScanActivity extends Activity implements ScannerSession.Listener, V
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
 		// initialize the overlay, that will display results and informations
 		overlay = (Overlay) findViewById(R.id.overlay);
 		overlay.init();
@@ -62,6 +60,12 @@ public class ScanActivity extends Activity implements ScannerSession.Listener, V
 		}
 		// set session options
 		session.setOptions(ScanOptions);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+
 		// start scanning!
 		session.resume();
 		
@@ -70,14 +74,20 @@ public class ScanActivity extends Activity implements ScannerSession.Listener, V
 		status.putBoolean("decode_ean_8", (ScanOptions & Result.Type.EAN8) != 0);
 		status.putBoolean("decode_ean_13", (ScanOptions & Result.Type.EAN13) != 0);
 		status.putBoolean("decode_qrcode", (ScanOptions & Result.Type.QRCODE) != 0);
+		status.putBoolean("decode_datamatrix", (ScanOptions & Result.Type.DATAMATRIX) != 0);
 		overlay.onStatusUpdate(status);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		session.pause();
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
 		session.close();
-		finish();
 	}
 	
 	@Override
@@ -104,7 +114,13 @@ public class ScanActivity extends Activity implements ScannerSession.Listener, V
 			overlay.onResult(session, result);
 		}
 	}
-	
+
+	@Override
+	public void onScanFailed(MoodstocksError error) {
+		// in this sample code, we just log the errors.
+		error.log();
+	}
+
 	@Override
 	public void onApiSearchStart() {
 		// inform user

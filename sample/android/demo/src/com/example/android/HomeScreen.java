@@ -1,7 +1,5 @@
 package com.example.android;
 
-import com.moodstocks.android.*;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -11,7 +9,11 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
 
-public class HomeScreen extends Activity implements View.OnClickListener, Scanner.SyncListener {
+import com.moodstocks.android.MoodstocksError;
+import com.moodstocks.android.Scanner;
+import com.moodstocks.android.Sync;
+
+public class HomeScreen extends Activity implements View.OnClickListener, Sync.Listener {
 
 	public static final String TAG = "HomeScreen";
 	private boolean compatible = false;
@@ -70,19 +72,19 @@ public class HomeScreen extends Activity implements View.OnClickListener, Scanne
 		}
 		else {
 			/* device is *not* compatible. In this demo application, we chose
-       * to inform the user and exit application. `compatible` flag is here
-       * to avoid calling scanner methods that *will* fail and log errors. 
-       */
-      AlertDialog.Builder builder = new AlertDialog.Builder(this);
-      builder.setCancelable(false);
-      builder.setTitle("Unsupported device!");
-      builder.setMessage("Device must run Android Gingerbread or over, sorry...");
-      builder.setNeutralButton("Quit", new DialogInterface.OnClickListener() {
-        public void onClick(DialogInterface dialog, int id) {
-          finish();
-        }
-      });
-      builder.show();
+			 * to inform the user and exit application. `compatible` flag is here
+			 * to avoid calling scanner methods that *will* fail and log errors.
+			 */
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setCancelable(false);
+			builder.setTitle("Unsupported device!");
+			builder.setMessage("Device must run Android Gingerbread or over, sorry...");
+			builder.setNeutralButton("Quit", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					finish();
+				}
+			});
+			builder.show();
 		}
 	}
 	

@@ -1,23 +1,28 @@
 package com.example.android;
 
-import com.moodstocks.android.*;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
-import android.widget.ScrollView;
 
-public class Overlay extends RelativeLayout 
-implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener, 
-					 SlidingDrawer.OnDrawerOpenListener, Scanner.SyncListener {
+import com.moodstocks.android.MoodstocksError;
+import com.moodstocks.android.Result;
+import com.moodstocks.android.Scanner;
+import com.moodstocks.android.ScannerSession;
+import com.moodstocks.android.Sync;
+
+public class Overlay extends RelativeLayout
+implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener,
+					 SlidingDrawer.OnDrawerOpenListener, Sync.Listener {
 
 	public static final String TAG = "Overlay";
 	private String ean_info = "";
 	private String qr_info = "";
 	private String cache_info = "";
+	private String dmtx_info = "";
 	private SlidingDrawer drawer = null;
 	private ScannerSession session = null;
 	private Scanner scanner = null;
@@ -81,7 +86,23 @@ implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener,
 			qr_info = new String(s);
 		}
 	}
-	
+
+	//update information about Datamatrix.
+	private void dmtxInfo(boolean dmtx) {
+		TextView tv = (TextView) findViewById(R.id.dmtx_info);
+		String s;
+		if (dmtx) {
+			s = "[X] Datamatrix";
+		}
+		else {
+			s = "[ ] Datamatrix";
+		}
+		if (!s.equals(dmtx_info)) {
+			tv.setText(s);
+			dmtx_info = new String(s);
+		}
+	}
+
 	/* Update information about offline cache.
 	 * It will display the number of images currently in cache if no sync
 	 * is currently running, otherwise it will display "syncing..." without
@@ -113,7 +134,11 @@ implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener,
 	private void cacheInfo(int total, int current) {
 		TextView tv = (TextView) findViewById(R.id.cache_info);
 		int p = (current*100)/total;
-		String s = "[X] Cache (Syncing... "+p+"%)";
+		String s;
+		if (p < 100)
+			s = "[X] Cache (Syncing... "+p+"%)";
+		else
+			s = "[X] Cache (Updating...)";
 		if (!s.equals(cache_info)) {
 			tv.setText(s);
 			cache_info = new String(s);
@@ -139,6 +164,7 @@ implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener,
 		((TextView) findViewById(R.id.ean_info)).setVisibility(v);
 		((TextView) findViewById(R.id.qrcode_info)).setVisibility(v);
 		((TextView) findViewById(R.id.cache_info)).setVisibility(v);
+		((TextView) findViewById(R.id.dmtx_info)).setVisibility(v);
 		v = b ? INVISIBLE : VISIBLE;
 		drawer.setVisibility(v);
 	}
@@ -149,13 +175,19 @@ implements ScanActivity.Listener, SlidingDrawer.OnDrawerCloseListener,
 	//-----------------------
 	@Override
 	public void onStatusUpdate(Bundle status) {
-			
+
 		// update EAN info
-		eanInfo(status.getBoolean("decode_ean_8"), status.getBoolean("decode_ean_13"));
+		if (status.containsKey("decode_ean_8") && status.containsKey("decode_ean_13"))
+			eanInfo(status.getBoolean("decode_ean_8"), status.getBoolean("decode_ean_13"));
 
 		// update QR codes info
-		qrInfo(status.getBoolean("decode_qrcode"));
-		
+		if (status.containsKey("decode_qrcode"))
+			qrInfo(status.getBoolean("decode_qrcode"));
+
+		// update Datamatrix info
+		if (status.containsKey("decode_datamatrix"))
+			dmtxInfo(status.getBoolean("decode_datamatrix"));
+
 		// update offline cache info
 		cacheInfo();
 	}
