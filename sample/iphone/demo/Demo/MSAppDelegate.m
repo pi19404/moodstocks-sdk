@@ -91,7 +91,7 @@
         
         RootViewController *rootViewController = [[[RootViewController alloc] init] autorelease];
         self.navigationController = [[[UINavigationController alloc] initWithRootViewController:rootViewController] autorelease];
-        [self.window addSubview:self.navigationController.view];
+        [self.window setRootViewController:self.navigationController];
     }
     
     [self.window makeKeyAndVisible];

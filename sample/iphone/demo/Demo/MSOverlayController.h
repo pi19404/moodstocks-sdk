@@ -39,5 +39,6 @@
 @property (nonatomic, assign) BOOL decodeEAN_8;
 @property (nonatomic, assign) BOOL decodeEAN_13;
 @property (nonatomic, assign) BOOL decodeQRCode;
+@property (nonatomic, assign) BOOL decodeDatamatrix;
 
 @end

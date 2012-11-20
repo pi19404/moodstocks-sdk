@@ -23,13 +23,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import "MSAvailability.h"
-
-#if MS_SDK_REQUIREMENTS
-  #import <AVFoundation/AVFoundation.h>
-#endif
-
-#import "MSScanner.h"
 #import "MSScannerSession.h"
 #import "MSActivityView.h"
 
@@ -40,25 +33,15 @@
 <
 MSActivityViewDelegate
 #if MS_SDK_REQUIREMENTS
-, AVCaptureVideoDataOutputSampleBufferDelegate, MSScannerDelegate
+, MSScannerSessionDelegate
 #endif
 >
 {
     MSOverlayController *_overlayController;
-    MSScannerSession    *_scannerSession;
-#if MS_SDK_REQUIREMENTS
-    AVCaptureSession*           captureSession;
-    AVCaptureVideoPreviewLayer *previewLayer;
-    AVCaptureVideoOrientation   orientation;
-#endif
+    MSScannerSession *_scannerSession;
     MSResult *_result; // previous result
+    UIView *_videoPreview;
 }
-
-#if MS_SDK_REQUIREMENTS
-@property (nonatomic, retain) AVCaptureSession *captureSession;
-@property (nonatomic, retain) AVCaptureVideoPreviewLayer *previewLayer;
-@property (nonatomic, assign) AVCaptureVideoOrientation orientation;
-#endif
 
 /**
  * Flush the last recognized result (if any) and start scanning again
