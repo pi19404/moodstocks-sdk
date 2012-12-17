@@ -34,9 +34,7 @@
 		822B28CA149914E3001A7DD1 /* MSScannerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MSScannerController.m; sourceTree = "<group>"; };
 		822B28CC149914FE001A7DD1 /* MSOverlayController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MSOverlayController.h; sourceTree = "<group>"; };
 		822B28CD149914FE001A7DD1 /* MSOverlayController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MSOverlayController.m; sourceTree = "<group>"; };
-		822B28D514991AAD001A7DD1 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 		822B28D714991AC0001A7DD1 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		822B28D914991ACF001A7DD1 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		822B28DB14991ADC001A7DD1 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		822B28DD14991AEF001A7DD1 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		822B28DF14991AFF001A7DD1 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -129,9 +127,7 @@
 		82A1659A149907C200B8AEB4 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				822B28D514991AAD001A7DD1 /* ImageIO.framework */,
 				822B28D714991AC0001A7DD1 /* QuartzCore.framework */,
-				822B28D914991ACF001A7DD1 /* Accelerate.framework */,
 				822B28DB14991ADC001A7DD1 /* CoreVideo.framework */,
 				822B28DD14991AEF001A7DD1 /* CoreMedia.framework */,
 				822B28DF14991AFF001A7DD1 /* AVFoundation.framework */,
