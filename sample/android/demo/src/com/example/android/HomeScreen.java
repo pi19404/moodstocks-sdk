@@ -78,7 +78,7 @@ public class HomeScreen extends Activity implements View.OnClickListener, Sync.L
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setCancelable(false);
 			builder.setTitle("Unsupported device!");
-			builder.setMessage("Device must run Android Gingerbread or over, sorry...");
+			builder.setMessage("Device must feature an ARM CPU and run Android Gingerbread or over, sorry...");
 			builder.setNeutralButton("Quit", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int id) {
 					finish();
@@ -97,7 +97,7 @@ public class HomeScreen extends Activity implements View.OnClickListener, Sync.L
 		 *   has not been synced for more than one day.
 		 */
 		super.onResume();
-		if (System.currentTimeMillis() - last_sync > DAY)
+		if (compatible && System.currentTimeMillis() - last_sync > DAY)
 			scanner.sync(this);
 	}
 
