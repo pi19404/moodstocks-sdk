@@ -1,11 +1,13 @@
 # Moodstocks SDK - Sample apps
 
-The Moodstocks SDK provides a scanner for mobile devices. It recognizes both barcodes and images. Scanning operates on the client-side which lets you create nice augmented reality overlays. Also it even works off-line thanks to a built-in, easy-to-use on-device image signatures synchronization.
+This repository is **DEPRECATED**.
 
-The SDK is provided as a lightweight, embeddable and pre-built C library that comes with open source code samples written for your favorite mobile OS (iOS or Android).
+It has been replaced with new repositories per-platform:
 
-To get started (for free!) create an account on https://developers.moodstocks.com/ and follow the instructions.
+* iOS: [moodstocks-iphone-demo-app](https://github.com/Moodstocks/moodstocks-iphone-demo-app)
+* Android: [moodstocks-android-demo-app](https://github.com/Moodstocks/moodstocks-android-demo-app)
+* RubyMotion: [moodstocks-rubymotion-demo-app](https://github.com/Moodstocks/moodstocks-rubymotion-demo-app)
 
 ## Copyright
 
-Copyright (c) 2013 Moodstocks SAS
+Copyright (c) 2013 [Moodstocks SAS](http://www.moodstocks.com)
